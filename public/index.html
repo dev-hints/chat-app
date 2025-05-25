@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bhram Loop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>⥁ Bhram ∞ Loop ⥀</h2>
+
+  <ul id="messages"></ul>
+
+  <div id="usernameBox">
+    <input id="username" placeholder="Enter username" />
+    <button onclick="submitUsername()">Join Chat</button>
+  </div>
+  <p id="usernameError"></p>
+
+  <form id="form" style="display:none;">
+    <input id="input" autocomplete="off" placeholder="Type your cosmic message..." />
+    <button>Send</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+    const usernameBox = document.getElementById('usernameBox');
+    const usernameInput = document.getElementById('username');
+    const usernameError = document.getElementById('usernameError');
+
+    function submitUsername() {
+      const username = usernameInput.value.trim();
+      if (!username) {
+        usernameError.textContent = "Username cannot be empty.";
+        return;
+      }
+
+      socket.emit('set username', username, (response) => {
+        if (response.success) {
+          usernameBox.style.display = 'none';
+          form.style.display = 'flex';
+        } else {
+          usernameError.textContent = response.message;
+        }
+      });
+    }
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (input.value) {
+        socket.emit('chat message', input.value);
+        input.value = '';
+      }
+    });
+
+    socket.on('chat message', function(data) {
+      const item = document.createElement('li');
+      item.innerHTML = `<strong>${data.username}</strong>: ${data.msg}`;
+      messages.appendChild(item);
+      messages.scrollTop = messages.scrollHeight;
+    });
+
+    socket.on('user joined', function(msg) {
+      const item = document.createElement('li');
+      item.style.color = '#00ff88';
+      item.textContent = msg;
+      messages.appendChild(item);
+    });
+
+    socket.on('user left', function(msg) {
+      const item = document.createElement('li');
+      item.style.color = '#ff5050';
+      item.textContent = msg;
+      messages.appendChild(item);
+    });
+  </script>
+</body>
+</html>
